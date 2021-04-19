@@ -6,41 +6,13 @@ from typing import (
 )
 
 import phonenumbers
-from aiohttp import ClientSession
 from phonenumbers import PhoneNumber
 
+from client import get_html_from_urls
 from repository import Repository
 
 
 national_format_converter = re.compile(r'[ \-()]')
-
-
-async def fetch(session: ClientSession, url: str) -> str:
-    """
-    Получение текста страницы по url.
-
-    :param session: сессия клиента aiohttp
-    :param url: адрес страницы
-    :return: текст html страницы
-    """
-    async with session.get(url) as response:
-        response.raise_for_status()
-        return await response.text()
-
-
-async def fetch_all(session: ClientSession, urls: List[str]) -> List[str]:
-    """
-    Создание асинхронных задач для получения текста страниц.
-
-    :param session: сессия клиента aiohttp
-    :param urls: адреса страниц
-    :return: список текстов страниц
-    """
-    tasks = []
-    for url in urls:
-        task = asyncio.create_task(fetch(session, url))
-        tasks.append(task)
-    return await asyncio.gather(*tasks)
 
 
 def change_phone_format(phone_number: PhoneNumber) -> str:
@@ -66,8 +38,7 @@ async def main(repository: Repository):
     parsed_numbers: Dict[str, List[str]] = {}
 
     # получаем исходный код всех страниц
-    async with ClientSession() as session:
-        raw_html_list = await fetch_all(session, urls)
+    raw_html_list = await get_html_from_urls(urls=urls)
 
     # соответствие страницы сайта и его html
     for site, source_code in zip(urls, raw_html_list):
